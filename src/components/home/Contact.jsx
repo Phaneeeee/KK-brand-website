@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MapPin, Phone, Mail, Clock, CheckCircle2, ExternalLink, Navigation, Star, AlertCircle } from 'lucide-react';
+import { MapPin, Phone, Mail, Clock, CheckCircle2, ExternalLink, Navigation, Star, AlertCircle, Loader2 } from 'lucide-react';
 import { restaurantInfo } from '../../data/restaurant';
 
 export default function Contact() {
@@ -7,20 +7,44 @@ export default function Contact() {
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [ratingError, setRatingError] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formSubmitted, setFormSubmitted] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (rating === 0) {
       setRatingError(true);
       return;
     }
     setRatingError(false);
-    setFormSubmitted(true);
-    setTimeout(() => {
-      setFormSubmitted(false);
-      setRating(0);
-    }, 6000);
+    setIsSubmitting(true);
+
+    const formData = new FormData(e.target);
+    formData.append('Rating', `${rating} / 5 Stars`);
+
+    try {
+      const response = await fetch('https://formspree.io/f/mrpbaywk', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        setFormSubmitted(true);
+        setTimeout(() => {
+          setFormSubmitted(false);
+          setRating(0);
+        }, 6000);
+      } else {
+        alert('There was an issue submitting your review. Please try again.');
+      }
+    } catch (error) {
+      alert('Network connection error. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -142,7 +166,7 @@ export default function Contact() {
                   <CheckCircle2 className="w-8 h-8 shrink-0 text-emerald-400" />
                   <div>
                     <span className="font-bold text-base block text-emerald-300">Thank you for your review!</span>
-                    <span className="text-xs text-emerald-400/90">Your feedback helps us maintain authentic taste and quality daily.</span>
+                    <span className="text-xs text-emerald-400/90">Your feedback has been sent directly to Kammili's Kitchen team.</span>
                   </div>
                 </div>
               ) : (
@@ -194,6 +218,7 @@ export default function Contact() {
                       <label className="text-xs text-stone-400 font-medium">Your Name</label>
                       <input
                         type="text"
+                        name="name"
                         required
                         placeholder="e.g. Ramesh Kumar"
                         className="w-full bg-stone-950 border border-stone-800 focus:border-amber-500 rounded-xl px-4 py-3 text-sm text-stone-100 focus:outline-none transition-colors placeholder:text-stone-600"
@@ -204,6 +229,7 @@ export default function Contact() {
                       <label className="text-xs text-stone-400 font-medium">Dish Ordered</label>
                       <input
                         type="text"
+                        name="dish"
                         placeholder="e.g. Chicken Dum Biryani"
                         className="w-full bg-stone-950 border border-stone-800 focus:border-amber-500 rounded-xl px-4 py-3 text-sm text-stone-100 focus:outline-none transition-colors placeholder:text-stone-600"
                       />
@@ -214,6 +240,7 @@ export default function Contact() {
                     <label className="text-xs text-stone-400 font-medium">Your Review / Feedback</label>
                     <textarea
                       rows="4"
+                      name="message"
                       required
                       placeholder="Write your review or feedback about our food taste, freshness, and portion..."
                       className="w-full bg-stone-950 border border-stone-800 focus:border-amber-500 rounded-xl px-4 py-3 text-sm text-stone-100 focus:outline-none transition-colors placeholder:text-stone-600"
@@ -222,10 +249,20 @@ export default function Contact() {
 
                   <button
                     type="submit"
-                    className="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg transition-all flex items-center justify-center space-x-2"
+                    disabled={isSubmitting}
+                    className="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg transition-all flex items-center justify-center space-x-2 disabled:opacity-60"
                   >
-                    <Star className="w-4 h-4 fill-white" />
-                    <span>Submit Your Review</span>
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin text-white" />
+                        <span>Sending Review...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Star className="w-4 h-4 fill-white" />
+                        <span>Submit Your Review</span>
+                      </>
+                    )}
                   </button>
                 </form>
               )}
